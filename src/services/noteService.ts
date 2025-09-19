@@ -1,5 +1,5 @@
 import axios from "axios";
-import type { Note } from "../types/note";
+import type { Note, NoteTag } from "../types/note";
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL;
 const TOKEN = import.meta.env.VITE_NOTEHUB_TOKEN;
@@ -13,16 +13,13 @@ const api = axios.create({
 
 export interface FetchNotesResponse {
   notes: Note[];
-  total: number;
-  page: number;
-  perPage: number;
   totalPages: number;
 }
 
 export interface CreateNoteParams {
   title: string;
   content: string;
-  tag: Note["tag"];
+  tag: NoteTag;
 }
 
 export async function fetchNotes(
@@ -35,16 +32,16 @@ export async function fetchNotes(
     params.search = search;
   }
 
-  const response = await api.get("/notes", { params });
+  const response = await api.get<FetchNotesResponse>("/notes", { params });
   return response.data;
 }
 
 export async function createNote(newNote: CreateNoteParams): Promise<Note> {
-  const response = await api.post("/notes", newNote);
+  const response = await api.post<Note>("/notes", newNote);
   return response.data;
 }
 
 export async function deleteNote(id: string): Promise<Note> {
-  const response = await api.delete(`/notes/${id}`);
+  const response = await api.delete<Note>(`/notes/${id}`);
   return response.data;
 }

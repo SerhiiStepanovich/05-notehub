@@ -6,8 +6,8 @@ import Modal from "../Modal/Modal";
 import NoteForm from "../NoteForm/NoteForm";
 import styles from "./App.module.css";
 import { useDebounce } from "../../hooks/useDebounce";
-import { useQuery } from "@tanstack/react-query";
-import { fetchNotes } from "../../services/noteService";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { fetchNotes, deleteNote } from "../../services/noteService";
 
 const PER_PAGE = 12;
 
@@ -16,19 +16,36 @@ const App: React.FC = () => {
   const [search, setSearch] = useState<string>("");
   const [isModalOpen, setModalOpen] = useState<boolean>(false);
 
+  const queryClient = useQueryClient();
   const debouncedSearch = useDebounce(search, 500);
 
-  const { data } = useQuery({
+  const { data, isLoading, isError, error } = useQuery({
     queryKey: ["notes", { page, perPage: PER_PAGE, search: debouncedSearch }],
     queryFn: () => fetchNotes(page, PER_PAGE, debouncedSearch),
   });
 
-  const totalPages = data?.totalPages ?? 1;
+  const mutation = useMutation({
+    mutationFn: deleteNote,
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: [
+          "notes",
+          { page, perPage: PER_PAGE, search: debouncedSearch },
+        ],
+      });
+    },
+  });
 
   const handleSearchChange = (value: string) => {
     setSearch(value);
     setPage(1);
   };
+
+  const handleDelete = (id: string) => {
+    mutation.mutate(id);
+  };
+
+  const totalPages = data?.totalPages ?? 1;
 
   return (
     <div className={styles.app}>
@@ -40,7 +57,12 @@ const App: React.FC = () => {
         </button>
       </header>
 
-      <NoteList page={page} perPage={PER_PAGE} search={debouncedSearch} />
+      {isLoading && <p>Loading notes...</p>}
+      {isError && <p>Error: {(error as Error).message}</p>}
+
+      {data?.notes && data.notes.length > 0 && (
+        <NoteList notes={data.notes} onDelete={handleDelete} />
+      )}
 
       {totalPages > 1 && (
         <Pagination
