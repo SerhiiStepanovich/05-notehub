@@ -2,22 +2,7 @@ import React from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import type { Note } from "../../types/note";
 import styles from "./NoteList.module.css";
-
-const deleteNote = async (id: string): Promise<void> => {
-  const response = await fetch(
-    `https://notehub-public.goit.study/api/notes/${id}`,
-    {
-      method: "DELETE",
-      headers: {
-        Authorization: `Bearer ${import.meta.env.VITE_NOTEHUB_TOKEN}`,
-      },
-    }
-  );
-
-  if (!response.ok) {
-    throw new Error("Failed to delete note.");
-  }
-};
+import { deleteNote } from "../../services/noteService";
 
 interface NoteListProps {
   notes: Note[];
